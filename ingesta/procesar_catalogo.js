@@ -2,9 +2,9 @@
 
 import { db, collection, addDoc } from '../public/js/firebase-config.js';
 
-// Configuración de API Keys
-const IMGBB_API_KEY = 'TU_IMGBB_API_KEY_AQUI';
-const GEMINI_API_KEY = 'TU_GEMINI_API_KEY_AQUI';
+// Configuración de API Keys integradas
+const IMGBB_API_KEY = 'AQ.Ab8RN6JWVg044Rf1A5AorOtWfmecJgjbWNJ9FTfj8Suy0uKBTQ';
+const GEMINI_API_KEY = 'AQ.Ab8RN6JWVg044Rf1A5AorOtWfmecJgjbWNJ9FTfj8Suy0uKBTQ';
 
 // Temporizador de seguridad para la cuota gratuita de Gemini (4.2 segundos)
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
