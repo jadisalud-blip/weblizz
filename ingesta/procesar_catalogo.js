@@ -1,15 +1,10 @@
-// ingesta/procesar_catalogo.js - Motor de IA y optimización de imágenes
+import { db, collection, addDoc } from '../js/firebase-config.js';
 
-import { db, collection, addDoc } from '../public/js/firebase-config.js';
-
-// Configuración de API Keys integradas
 const IMGBB_API_KEY = 'AQ.Ab8RN6JWVg044Rf1A5AorOtWfmecJgjbWNJ9FTfj8Suy0uKBTQ';
 const GEMINI_API_KEY = 'AQ.Ab8RN6JWVg044Rf1A5AorOtWfmecJgjbWNJ9FTfj8Suy0uKBTQ';
 
-// Temporizador de seguridad para la cuota gratuita de Gemini (4.2 segundos)
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// 1. Subir imagen a ImgBB (Tráfico ilimitado)
 async function subirAImgBB(base64Image) {
   const formData = new FormData();
   formData.append('image', base64Image);
@@ -20,10 +15,9 @@ async function subirAImgBB(base64Image) {
   });
 
   const data = await response.json();
-  return data.data.url; // Retorna la URL directa de la foto
+  return data.data.url;
 }
 
-// 2. Analizar página con Gemini 1.5 Flash
 async function analizarConGemini(base64Image) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
   
@@ -61,23 +55,12 @@ async function analizarConGemini(base64Image) {
   return JSON.parse(textResponse);
 }
 
-// 3. Procesador principal de catálogo (Iterador con Rate Limit)
 export async function procesarPaginaCatalogo(numeroPagina, base64Image) {
-  console.log(`Procesando página ${numeroPagina}...`);
-
   try {
-    // Paso A: Subir imagen a ImgBB
     const urlImagen = await subirAImgBB(base64Image);
-    console.log(`Imagen ${numeroPagina} subida a ImgBB:`, urlImagen);
-
-    // Paso B: Pausa de 4.2s para no saturar el límite de 15 peticiones/min de Gemini
     await delay(4200);
-
-    // Paso C: Analizar con Gemini IA
     const datosIA = await analizarConGemini(base64Image);
-    console.log(`Página ${numeroPagina} analizada por Gemini:`, datosIA);
 
-    // Paso D: Guardar en Google Firestore
     await addDoc(collection(db, "campanas"), {
       numero_pagina: numeroPagina,
       url_imagen_imgbb: urlImagen,
@@ -85,8 +68,7 @@ export async function procesarPaginaCatalogo(numeroPagina, base64Image) {
       creado_el: new Date().toISOString()
     });
 
-    console.log(`Página ${numeroPagina} guardada exitosamente en Firestore.`);
-
+    console.log(`Página ${numeroPagina} procesada y guardada.`);
   } catch (error) {
     console.error(`Error en página ${numeroPagina}:`, error);
   }
