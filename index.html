@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Catálogo Interactivo</title>
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#000000">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -20,18 +20,15 @@
   <header>Catálogo Interactivo</header>
 
   <main class="catalog-container" id="catalog-app">
-    <!-- Aquí se cargará dinámicamente la imagen de ImgBB y los checkboxes desde Firestore -->
     <p style="text-align: center; padding: 40px;">Cargando catálogo...</p>
   </main>
 
-  <script type="module" src="/js/firebase-config.js"></script>
-  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="./js/app.js"></script>
   <script>
-    // Registro del Service Worker para PWA
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then(() => console.log('PWA Service Worker Registrado'))
-        .catch(err => console.error('Error en Service Worker:', err));
+      navigator.serviceWorker.register('./sw.js')
+        .then(() => console.log('Service Worker Registrado'))
+        .catch(err => console.error('Error SW:', err));
     }
   </script>
 </body>
