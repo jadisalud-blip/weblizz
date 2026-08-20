@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Admin - Cargar Catálogo</title>
+  <!-- Incluir pdf.js para convertir PDF a imágenes en el navegador -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #121212; color: #fff; padding: 20px; display: flex; justify-content: center; }
+    .card { background: #1e1e1e; padding: 25px; border-radius: 12px; max-width: 500px; width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+    h1 { font-size: 1.4rem; margin-bottom: 20px; text-align: center; color: #007bff; }
+    input[type="file"] { margin: 15px 0; width: 100%; color: #ccc; }
+    button { background: #28a745; color: #fff; border: none; padding: 12px 20px; font-size: 1rem; font-weight: bold; width: 100%; border-radius: 6px; cursor: pointer; }
+    button:disabled { background: #555; cursor: not-allowed; }
+    #log { margin-top: 20px; background: #000; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 0.85rem; height: 180px; overflow-y: auto; color: #00ff66; border: 1px solid #333; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h1>📤 Subir Nuevo Catálogo</h1>
+  <p style="font-size: 0.9rem; color: #aaa; margin-bottom: 15px;">Selecciona un archivo PDF de tu catálogo. El sistema convertirá las páginas, las subirá y la IA detectará los productos automáticamente.</p>
+  
+  <input type="file" id="pdf-input" accept="application/pdf">
+  <button id="btn-subir" disabled>Procesar e Ingestar Catálogo</button>
+
+  <div id="log">Esperando archivo PDF...</div>
+</div>
+
+<script type="module">
+  import { procesarPaginaCatalogo } from './ingesta/procesar_catalogo.js';
+
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+  const fileInput = document.getElementById('pdf-input');
+  const btnSubir = document.getElementById('btn-subir');
+  const logDiv = document.getElementById('log');
+
+  function log(mensaje) {
+    logDiv.innerHTML += `<div>> ${mensaje}</div>`;
+    logDiv.scrollTop = logDiv.scrollHeight;
+  }
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) {
+      btnSubir.disabled = false;
+      log("Archivo PDF seleccionado. Listo para procesar.");
+    }
+  });
+
+  btnSubir.addEventListener('click', async () => {
+    btnSubir.disabled = true;
+    fileInput.disabled = true;
+    const file = fileInput.files[0];
+
+    try {
+      log("Leyendo archivo PDF...");
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      log(`PDF cargado con éxito. Total páginas: ${pdf.numPages}`);
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        log(`--- Procesando Página ${i} de ${pdf.numPages} ---`);
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 1.5 });
+        
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        await page.render({ canvasContext: context, viewport: viewport }).promise;
+        
+        // Obtener base64 sin el prefijo data:image/jpeg;base64,
+        const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+        
+        log(`Enviando página ${i} a ImgBB y Gemini IA...`);
+        await procesarPaginaCatalogo(i, base64Image);
+        log(`✅ Página ${i} guardada en Firestore.`);
+      }
+
+      log("🎉 ¡CATÁLOGO COMPLETO PROCESADO Y PUBLICADO!");
+      alert("¡Proceso terminado! Abre la página principal para ver el catálogo.");
+
+    } catch (error) {
+      console.error(error);
+      log(`❌ Error: ${error.message}`);
+    } finally {
+      btnSubir.disabled = false;
+      fileInput.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>
