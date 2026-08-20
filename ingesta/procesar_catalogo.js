@@ -3,13 +3,13 @@ import { db, collection, addDoc } from '../js/firebase-config.js';
 // Configuración de API Keys
 const IMGBB_API_KEY = '5d138e2cd20043614a23b093b818f7f4';
 
-// Clave API exacta de tu proyecto
+// Tu clave API que empieza por AQ...
 const GEMINI_API_KEY = 'AQ.Ab8RN6LG2qNRUcrOAYISpGwMSOzUbLVwm27OqO6u3sP8oPBduQ';
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * 1. Subida de la imagen a ImgBB
+ * 1. Subida obligatoria de la imagen de la página a ImgBB
  */
 async function subirAImgBB(base64Image, numeroPagina) {
   const formData = new FormData();
@@ -29,11 +29,11 @@ async function subirAImgBB(base64Image, numeroPagina) {
 }
 
 /**
- * 2. Análisis con Gemini IA usando el endpoint con parámetro key
+ * 2. Análisis con Gemini IA
  */
 async function analizarConGeminiObligatorio(base64Image, numeroPagina) {
-  // Se incluye la clave AQ... directamente en el parámetro ?key= del endpoint oficial de Google
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+  // La URL se envía limpia sin el parámetro ?key=
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
   const prompt = `Analiza esta página de catálogo comercial.
 Identifica todos los productos visibles y extrae su código, nombre, precio y sus coordenadas 2D en porcentaje (0 a 100) con la estructura [ymin, xmin, ymax, xmax].
@@ -71,7 +71,7 @@ Responde ÚNICAMENTE en JSON válido con este formato:
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-goog-api-key': GEMINI_API_KEY
+          'x-goog-api-key': GEMINI_API_KEY // <-- AQUÍ ES DONDE SE VALIDA LA CLAVE AQ...
         },
         body: JSON.stringify(payload)
       });
@@ -100,7 +100,7 @@ Responde ÚNICAMENTE en JSON válido con este formato:
 }
 
 /**
- * 3. Proceso principal
+ * 3. Proceso principal secuencial por Campaña y Fecha
  */
 export async function procesarPaginaCatalogo(numeroPagina, base64Image, nombreCampana = "Campaña C09") {
   console.log(`\n=== PROCESANDO PÁGINA ${numeroPagina} ===`);
