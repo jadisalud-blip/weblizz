@@ -1,12 +1,15 @@
 import { db, collection, addDoc } from '../js/firebase-config.js';
 
+// Configuración de API Keys
 const IMGBB_API_KEY = '5d138e2cd20043614a23b093b818f7f4';
-// Asegúrate de pegar aquí tu API Key real de Gemini (la que empieza por AIzaSy...)
-const GEMINI_API_KEY = 'AQ.Ab8RN6JlIMK2xCCnfTQcV_oO3i06qkKPUkGujIhks8U-znPfOQ'; 
+const GEMINI_API_KEY = 'AQ.Ab8RN6J1IMK2xCCnfTQcV_oO3i06qkKPUkGujIhks8U-znPfOQ'; 
 
+// Función para manejar pausas de tiempo
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// 1. Subida obligatoria a ImgBB
+/**
+ * 1. Subida obligatoria de la imagen de la página a ImgBB
+ */
 async function subirAImgBB(base64Image, numeroPagina) {
   const formData = new FormData();
   formData.append('image', base64Image);
@@ -24,13 +27,16 @@ async function subirAImgBB(base64Image, numeroPagina) {
   return data.data.url;
 }
 
-// 2. Análisis obligatorio con Gemini (Reintento estricto)
+/**
+ * 2. Análisis obligatorio con Gemini IA usando X-goog-api-key
+ * No sale del bucle hasta obtener respuesta válida de coordenadas.
+ */
 async function analizarConGeminiObligatorio(base64Image, numeroPagina) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
   
-  const prompt = `Analiza esta imagen de catálogo comercial.
-Identifica todos los productos visibles con su código, precio y coordenadas 2D [ymin, xmin, ymax, xmax] en porcentajes (0 a 100).
-Responde EXCLUSIVAMENTE en formato JSON:
+  const prompt = `Analiza esta página de catálogo comercial.
+Identifica todos los productos visibles y extrae su código, nombre, precio y sus coordenadas 2D en porcentaje (0 a 100) con la estructura [ymin, xmin, ymax, xmax].
+Responde ÚNICAMENTE en JSON válido con este formato:
 {
   "productos": [
     {
@@ -56,14 +62,17 @@ Responde EXCLUSIVAMENTE en formato JSON:
   let intentos = 0;
   let productos = [];
 
-  // Bucle de reintento: NO AVANZA hasta obtener respuesta válida de Gemini
   while (!exito) {
     intentos++;
     try {
-      console.log(`[Pág ${numeroPagina}] Enviando a Gemini IA (Intento ${intentos})...`);
+      console.log(`[Pág ${numeroPagina}] Pidiendo coordenadas a Gemini (Intento ${intentos})...`);
+      
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-goog-api-key': GEMINI_API_KEY
+        },
         body: JSON.stringify(payload)
       });
 
@@ -77,37 +86,41 @@ Responde EXCLUSIVAMENTE en formato JSON:
       const jsonParsed = JSON.parse(textResponse);
 
       productos = jsonParsed.productos || [];
-      exito = true; // Solo si se procesa el JSON correctamente salimos del bucle
-      console.log(`[Pág ${numeroPagina}] Coordenadas obtenidas con éxito (${productos.length} productos).`);
+      exito = true;
+      console.log(`[Pág ${numeroPagina}] Coordenadas obtenidas correctamente (${productos.length} productos).`);
 
     } catch (error) {
-      console.warn(`[Pág ${numeroPagina}] Fallo en Gemini IA: ${error.message}. Reintentando en 4 segundos...`);
-      await delay(4000); // Espera antes de volver a intentar la MISMA página
+      console.warn(`[Pág ${numeroPagina}] Error en Gemini: ${error.message}. Reintentando en 4s...`);
+      await delay(4000);
     }
   }
 
   return productos;
 }
 
-// 3. Proceso estricto en orden secuencial
-export async function procesarPaginaCatalogo(numeroPagina, base64Image) {
-  // Paso A: Subir imagen
-  console.log(`\n=== INICIANDO PÁGINA ${numeroPagina} ===`);
+/**
+ * 3. Proceso principal secuencial por Campaña y Fecha
+ */
+export async function procesarPaginaCatalogo(numeroPagina, base64Image, nombreCampana = "Campaña C09") {
+  console.log(`\n=== PROCESANDO PÁGINA ${numeroPagina} ===`);
+  
+  // Paso A: Subir Imagen
   const urlImagen = await subirAImgBB(base64Image, numeroPagina);
 
-  // Paso B: Obtener Coordenadas de Gemini (Bloqueante hasta tener éxito)
+  // Paso B: Obtener Coordenadas (Bloqueante hasta éxito)
   const productos = await analizarConGeminiObligatorio(base64Image, numeroPagina);
 
-  // Paso C: Guardar en Firestore solo cuando tenemos imagen + coordenadas
+  // Paso C: Guardar en Firestore con fecha e identificador de campaña
   await addDoc(collection(db, "campanas"), {
+    campana_id: nombreCampana,
     numero_pagina: numeroPagina,
     url_imagen_imgbb: urlImagen,
     productos: productos,
     creado_el: new Date().toISOString()
   });
 
-  console.log(`=== PÁGINA ${numeroPagina} GUARDADA Y COMPLETADA ===\n`);
+  console.log(`=== PÁGINA ${numeroPagina} GUARDADA EXITOSAMENTE EN FIRESTORE ===\n`);
   
-  // Pausa de cortesía entre páginas
-  await delay(2000);
+  // Pausa de 2.5 segundos para evitar límites de tasa (Rate Limit) entre páginas
+  await delay(2500);
 }
