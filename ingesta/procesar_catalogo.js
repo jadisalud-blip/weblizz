@@ -2,13 +2,14 @@ import { db, collection, addDoc } from '../js/firebase-config.js';
 
 // Configuración de API Keys
 const IMGBB_API_KEY = '5d138e2cd20043614a23b093b818f7f4';
-const GEMINI_API_KEY = 'AQ.Ab8RN6J1IMK2xCCnfTQcV_oO3i06qkKPUkGujIhks8U-znPfOQ';
 
-// Función auxiliar para pausas de tiempo
+// Clave API exacta de tu proyecto
+const GEMINI_API_KEY = 'AQ.Ab8RN6LG2qNRUcrOAYISpGwMSOzUbLVwm27OqO6u3sP8oPBduQ';
+
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * 1. Subida obligatoria de la imagen de la página a ImgBB
+ * 1. Subida de la imagen a ImgBB
  */
 async function subirAImgBB(base64Image, numeroPagina) {
   const formData = new FormData();
@@ -28,11 +29,11 @@ async function subirAImgBB(base64Image, numeroPagina) {
 }
 
 /**
- * 2. Análisis obligatorio con Gemini IA usando Bearer Token
- * Incluye un máximo de 3 intentos para evitar bucles infinitos.
+ * 2. Análisis con Gemini IA usando el endpoint con parámetro key
  */
 async function analizarConGeminiObligatorio(base64Image, numeroPagina) {
-  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+  // Se incluye la clave AQ... directamente en el parámetro ?key= del endpoint oficial de Google
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
   const prompt = `Analiza esta página de catálogo comercial.
 Identifica todos los productos visibles y extrae su código, nombre, precio y sus coordenadas 2D en porcentaje (0 a 100) con la estructura [ymin, xmin, ymax, xmax].
@@ -70,7 +71,7 @@ Responde ÚNICAMENTE en JSON válido con este formato:
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${GEMINI_API_KEY}`
+          'x-goog-api-key': GEMINI_API_KEY
         },
         body: JSON.stringify(payload)
       });
@@ -99,18 +100,14 @@ Responde ÚNICAMENTE en JSON válido con este formato:
 }
 
 /**
- * 3. Proceso principal secuencial por Campaña y Fecha
+ * 3. Proceso principal
  */
 export async function procesarPaginaCatalogo(numeroPagina, base64Image, nombreCampana = "Campaña C09") {
   console.log(`\n=== PROCESANDO PÁGINA ${numeroPagina} ===`);
 
-  // Paso A: Subir Imagen a ImgBB
   const urlImagen = await subirAImgBB(base64Image, numeroPagina);
-
-  // Paso B: Obtener Coordenadas desde Gemini IA
   const productos = await analizarConGeminiObligatorio(base64Image, numeroPagina);
 
-  // Paso C: Guardar en Firestore
   await addDoc(collection(db, "campanas"), {
     campana_id: nombreCampana,
     numero_pagina: numeroPagina,
@@ -120,7 +117,5 @@ export async function procesarPaginaCatalogo(numeroPagina, base64Image, nombreCa
   });
 
   console.log(`=== PÁGINA ${numeroPagina} GUARDADA EXITOSAMENTE EN FIRESTORE ===\n`);
-
-  // Pausa de 2.5 segundos para respetar los límites de la API
   await delay(2500);
 }
