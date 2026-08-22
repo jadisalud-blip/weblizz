@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel Administrativo - Catálogo</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f4f6f9; }
+    .card { background: white; padding: 20px; border-radius: 8px; max-width: 500px; margin: 0 auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h2 { margin-bottom: 15px; color: #333; }
+    input, button, select { width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
+    button { background: #28a745; color: white; font-weight: bold; border: none; cursor: pointer; }
+    #log { background: #222; color: #00ff00; padding: 10px; border-radius: 5px; height: 150px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>⚙️ Cargar Nuevo Catálogo</h2>
+    
+    <label>Marca:</label>
+    <select id="marca">
+      <option value="Avon">Avon</option>
+      <option value="Éssika">Éssika</option>
+      <option value="Yanbal">Yanbal</option>
+      <option value="Cyzone">Cyzone</option>
+    </select>
+
+    <label>Imagen de Página (JPG/PNG):</label>
+    <input type="file" id="file-input" accept="image/*">
+
+    <button onclick="procesarImagen()">🚀 Procesar con IA y Publicar</button>
+
+    <h3>Registro de actividad:</h3>
+    <div id="log">> Esperando acción...</div>
+  </div>
+
+  <script type="module">
+    import { procesarImagenAdmin } from './admin.js';
+
+    function log(msg) {
+      const l = document.getElementById('log');
+      l.innerHTML += `<br>> ${msg}`;
+      l.scrollTop = l.scrollHeight;
+    }
+
+    window.procesarImagen = async function() {
+      const fileInput = document.getElementById('file-input');
+      const marca = document.getElementById('marca').value;
+
+      if (!fileInput.files[0]) return alert('Por favor selecciona una imagen.');
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = async function() {
+        const base64Image = reader.result.split(',')[1];
+        try {
+          log('Procesando página...');
+          const resultado = await procesarImagenAdmin(base64Image, marca);
+          log('✅ Imagen subida e información extraída con éxito.');
+          log(`URL: ${resultado.urlImagen}`);
+        } catch (err) {
+          log(`❌ Error: ${err.message}`);
+        }
+      };
+
+      reader.readAsDataURL(file);
+    };
+  </script>
+</body>
+</html>
