@@ -7,11 +7,12 @@
     body { font-family: sans-serif; padding: 20px; background: #f4f6f9; }
     .card { background: white; padding: 20px; border-radius: 8px; max-width: 500px; margin: 0 auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
     h2 { margin-bottom: 15px; color: #333; }
-    input, button, select { width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
-    button { background: #28a745; color: white; font-weight: bold; border: none; cursor: pointer; }
+    input, button, select { width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
+    button { background: #28a745; color: white; font-weight: bold; border: none; cursor: pointer; font-size: 1rem; }
+    button:disabled { background: #6c757d; cursor: not-allowed; }
     #log { background: #222; color: #00ff00; padding: 10px; border-radius: 5px; height: 180px; overflow-y: auto; font-family: monospace; font-size: 12px; }
   </style>
-  <!-- CDN Estable de PDF.js -->
+  <!-- Cargamos PDF.js sin dependencias de módulos -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 </head>
 <body>
@@ -36,11 +37,9 @@
     <div id="log">> Esperando acción...</div>
   </div>
 
-  <script type="module">
-    import { procesarArchivoAdmin } from './admin.js';
-
-    // Configurar worker de PDF.js
-    if (window['pdfjs-dist/build/pdf']) {
+  <script>
+    // Configurar Worker de PDF.js
+    if (window.pdfjsLib) {
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
     }
 
@@ -50,9 +49,36 @@
       l.scrollTop = l.scrollHeight;
     }
 
+    async function procesarPaginaIndividual(base64Image, marca, numPagina) {
+      log(`[Pág ${numPagina}] 1. Subiendo imagen a ImgBB...`);
+      const resImg = await fetch('/api/imgbb', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64Image })
+      });
+      const dataImg = await resImg.json();
+
+      if (!dataImg.data || !dataImg.data.url) {
+        throw new Error(`Error subiendo página ${numPagina} a ImgBB`);
+      }
+
+      log(`[Pág ${numPagina}] 2. Analizando productos con Gemini...`);
+      const prompt = "Analiza esta página. Devuelve JSON con productos, precios y coordenadas 'box_2d': [ymin, xmin, ymax, xmax]";
+
+      const resGemini = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64Image, prompt })
+      });
+
+      const dataGemini = await resGemini.json();
+      log(`[Pág ${numPagina}] ✅ Procesada exitosamente.`);
+    }
+
     document.getElementById('btn-procesar').addEventListener('click', async () => {
       const fileInput = document.getElementById('file-input');
       const marca = document.getElementById('marca').value;
+      const btn = document.getElementById('btn-procesar');
 
       if (!fileInput.files[0]) {
         alert('Por favor selecciona un archivo PDF o imagen.');
@@ -60,12 +86,50 @@
       }
 
       const file = fileInput.files[0];
-      log('⏳ Archivo seleccionado: ' + file.name);
+      btn.disabled = true;
+      log(`⏳ Archivo seleccionado: ${file.name}`);
 
       try {
-        await procesarArchivoAdmin(file, marca, log);
+        if (file.type === 'application/pdf') {
+          log('📄 Leyendo PDF...');
+          const arrayBuffer = await file.arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+          log(`Total de páginas encontradas: ${pdf.numPages}`);
+
+          for (let numPagina = 1; numPagina <= pdf.numPages; numPagina++) {
+            log(`\n--- Procesando Página ${numPagina} de ${pdf.numPages} ---`);
+            const page = await pdf.getPage(numPagina);
+            const viewport = page.getViewport({ scale: 1.5 });
+
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+            const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+            await procesarPaginaIndividual(base64Image, marca, numPagina);
+          }
+
+          log('\n🎉 ¡Catálogo PDF procesado y publicado!');
+        } else {
+          log('🖼️ Procesando imagen individual...');
+          const reader = new FileReader();
+          reader.onload = async function() {
+            const base64Image = reader.result.split(',')[1];
+            await procesarPaginaIndividual(base64Image, marca, 1);
+            log('\n🎉 ¡Página publicada!');
+            btn.disabled = false;
+          };
+          reader.readAsDataURL(file);
+          return;
+        }
       } catch (err) {
         log(`❌ Error: ${err.message}`);
+      } finally {
+        btn.disabled = false;
       }
     });
   </script>
