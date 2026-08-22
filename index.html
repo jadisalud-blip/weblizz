@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tienda Virtual Multimarca</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/css/styles.css">
+  <meta name="theme-color" content="#e91e63">
+</head>
+<body>
+
+  <header>
+    <h1>🛍️ Catálogo Multimarca</h1>
+    <button class="cart-btn" onclick="verCarrito()">🛒 Carrito (<span id="cart-count">0</span>)</button>
+  </header>
+
+  <div class="container">
+    <div class="brands-bar">
+      <div class="brand-chip active">Todas</div>
+      <div class="brand-chip">Avon</div>
+      <div class="brand-chip">Éssika</div>
+      <div class="brand-chip">Yanbal</div>
+      <div class="brand-chip">Cyzone</div>
+    </div>
+
+    <div class="catalog-viewport" id="viewport">
+      <img src="https://via.placeholder.com/600x800?text=Cargando+Cat%C3%A1logo..." id="page-img" class="catalog-page-img">
+    </div>
+  </div>
+
+  <div class="modal" id="modal-product">
+    <div class="modal-content">
+      <h3 id="modal-title">Nombre del Producto</h3>
+      <p id="modal-code" style="color: #666; margin: 5px 0;">Código: -</p>
+      <h2 id="modal-price" style="color: #e91e63; margin: 10px 0;">$0.00</h2>
+      <button class="btn-add" onclick="agregarAlCarrito()">Añadir al Carrito</button>
+      <button class="btn-close" onclick="cerrarModal()">Cerrar</button>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+  </script>
+</body>
+</html>
