@@ -9,13 +9,18 @@
     h2 { margin-bottom: 15px; color: #333; }
     input, button, select { width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
     button { background: #28a745; color: white; font-weight: bold; border: none; cursor: pointer; }
-    #log { background: #222; color: #00ff00; padding: 10px; border-radius: 5px; height: 150px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+    #log { background: #222; color: #00ff00; padding: 10px; border-radius: 5px; height: 180px; overflow-y: auto; font-family: monospace; font-size: 12px; }
   </style>
+  <!-- Librería para convertir PDF a imágenes en el navegador -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
 </head>
 <body>
 
   <div class="card">
-    <h2>⚙️ Cargar Nuevo Catálogo</h2>
+    <h2>⚙️ Cargar Nuevo Catálogo (PDF o Imagen)</h2>
     
     <label>Marca:</label>
     <select id="marca">
@@ -25,17 +30,17 @@
       <option value="Cyzone">Cyzone</option>
     </select>
 
-    <label>Imagen de Página (JPG/PNG):</label>
-    <input type="file" id="file-input" accept="image/*">
+    <label>Archivo del Catálogo (PDF, JPG, PNG):</label>
+    <input type="file" id="file-input" accept="application/pdf, image/*">
 
-    <button onclick="procesarImagen()">🚀 Procesar con IA y Publicar</button>
+    <button onclick="procesarArchivo()">🚀 Procesar Catálogo con IA</button>
 
     <h3>Registro de actividad:</h3>
     <div id="log">> Esperando acción...</div>
   </div>
 
   <script type="module">
-    import { procesarImagenAdmin } from './admin.js';
+    import { procesarArchivoAdmin } from './admin.js';
 
     function log(msg) {
       const l = document.getElementById('log');
@@ -43,28 +48,18 @@
       l.scrollTop = l.scrollHeight;
     }
 
-    window.procesarImagen = async function() {
+    window.procesarArchivo = async function() {
       const fileInput = document.getElementById('file-input');
       const marca = document.getElementById('marca').value;
 
-      if (!fileInput.files[0]) return alert('Por favor selecciona una imagen.');
+      if (!fileInput.files[0]) return alert('Por favor selecciona un archivo PDF o imagen.');
 
       const file = fileInput.files[0];
-      const reader = new FileReader();
-
-      reader.onload = async function() {
-        const base64Image = reader.result.split(',')[1];
-        try {
-          log('Procesando página...');
-          const resultado = await procesarImagenAdmin(base64Image, marca);
-          log('✅ Imagen subida e información extraída con éxito.');
-          log(`URL: ${resultado.urlImagen}`);
-        } catch (err) {
-          log(`❌ Error: ${err.message}`);
-        }
-      };
-
-      reader.readAsDataURL(file);
+      try {
+        await procesarArchivoAdmin(file, marca, log);
+      } catch (err) {
+        log(`❌ Error general: ${err.message}`);
+      }
     };
   </script>
 </body>
