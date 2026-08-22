@@ -12,7 +12,6 @@
     button:disabled { background: #6c757d; cursor: not-allowed; }
     #log { background: #222; color: #00ff00; padding: 10px; border-radius: 5px; height: 180px; overflow-y: auto; font-family: monospace; font-size: 12px; }
   </style>
-  <!-- Cargamos PDF.js sin dependencias de módulos -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 </head>
 <body>
@@ -38,7 +37,6 @@
   </div>
 
   <script>
-    // Configurar Worker de PDF.js
     if (window.pdfjsLib) {
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
     }
@@ -62,8 +60,10 @@
         throw new Error(`Error subiendo página ${numPagina} a ImgBB`);
       }
 
-      log(`[Pág ${numPagina}] 2. Analizando productos con Gemini...`);
-      const prompt = "Analiza esta página. Devuelve JSON con productos, precios y coordenadas 'box_2d': [ymin, xmin, ymax, xmax]";
+      const urlImagen = dataImg.data.url;
+
+      log(`[Pág ${numPagina}] 2. Extrayendo datos con Gemini...`);
+      const prompt = "Analiza esta página. Devuelve un JSON estrictamente válido con un arreglo de objetos llamados 'productos', donde cada producto tenga: nombre, codigo, precio (número) y 'box_2d': [ymin, xmin, ymax, xmax]";
 
       const resGemini = await fetch('/api/gemini', {
         method: 'POST',
@@ -72,7 +72,24 @@
       });
 
       const dataGemini = await resGemini.json();
-      log(`[Pág ${numPagina}] ✅ Procesada exitosamente.`);
+
+      log(`[Pág ${numPagina}] 3. Guardando en Firestore...`);
+      const resFirestore = await fetch('/api/firestore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          marca: marca,
+          numPagina: numPagina,
+          imagenUrl: urlImagen,
+          datosPagina: dataGemini
+        })
+      });
+
+      if (!resFirestore.ok) {
+        throw new Error(`Error al guardar en BD para la página ${numPagina}`);
+      }
+
+      log(`[Pág ${numPagina}] ✅ Procesada y guardada en BD exitosamente.`);
     }
 
     document.getElementById('btn-procesar').addEventListener('click', async () => {
@@ -113,14 +130,14 @@
             await procesarPaginaIndividual(base64Image, marca, numPagina);
           }
 
-          log('\n🎉 ¡Catálogo PDF procesado y publicado!');
+          log('\n🎉 ¡Catálogo PDF guardado por completo en Firestore!');
         } else {
           log('🖼️ Procesando imagen individual...');
           const reader = new FileReader();
           reader.onload = async function() {
             const base64Image = reader.result.split(',')[1];
             await procesarPaginaIndividual(base64Image, marca, 1);
-            log('\n🎉 ¡Página publicada!');
+            log('\n🎉 ¡Página guardada en Firestore!');
             btn.disabled = false;
           };
           reader.readAsDataURL(file);
