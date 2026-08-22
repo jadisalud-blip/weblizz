@@ -11,11 +11,8 @@
     button { background: #28a745; color: white; font-weight: bold; border: none; cursor: pointer; }
     #log { background: #222; color: #00ff00; padding: 10px; border-radius: 5px; height: 180px; overflow-y: auto; font-family: monospace; font-size: 12px; }
   </style>
-  <!-- Librería para convertir PDF a imágenes en el navegador -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  </script>
+  <!-- CDN Estable de PDF.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 </head>
 <body>
 
@@ -33,7 +30,7 @@
     <label>Archivo del Catálogo (PDF, JPG, PNG):</label>
     <input type="file" id="file-input" accept="application/pdf, image/*">
 
-    <button onclick="procesarArchivo()">🚀 Procesar Catálogo con IA</button>
+    <button id="btn-procesar">🚀 Procesar Catálogo con IA</button>
 
     <h3>Registro de actividad:</h3>
     <div id="log">> Esperando acción...</div>
@@ -42,25 +39,35 @@
   <script type="module">
     import { procesarArchivoAdmin } from './admin.js';
 
+    // Configurar worker de PDF.js
+    if (window['pdfjs-dist/build/pdf']) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    }
+
     function log(msg) {
       const l = document.getElementById('log');
       l.innerHTML += `<br>> ${msg}`;
       l.scrollTop = l.scrollHeight;
     }
 
-    window.procesarArchivo = async function() {
+    document.getElementById('btn-procesar').addEventListener('click', async () => {
       const fileInput = document.getElementById('file-input');
       const marca = document.getElementById('marca').value;
 
-      if (!fileInput.files[0]) return alert('Por favor selecciona un archivo PDF o imagen.');
+      if (!fileInput.files[0]) {
+        alert('Por favor selecciona un archivo PDF o imagen.');
+        return;
+      }
 
       const file = fileInput.files[0];
+      log('⏳ Archivo seleccionado: ' + file.name);
+
       try {
         await procesarArchivoAdmin(file, marca, log);
       } catch (err) {
-        log(`❌ Error general: ${err.message}`);
+        log(`❌ Error: ${err.message}`);
       }
-    };
+    });
   </script>
 </body>
 </html>
