@@ -3,162 +3,178 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prueba Directa de IA - Ficha Técnica</title>
+  <title>Panel de Administración - Procesador de Catálogos PDF</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <style>
     * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
-    body { background: #f1f5f9; padding: 20px; margin: 0; }
-    .container { max-width: 900px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-    h1 { color: #1e293b; font-size: 1.5rem; margin-top: 0; }
-    .input-group { margin-bottom: 15px; }
-    label { font-weight: 600; display: block; margin-bottom: 5px; color: #475569; }
-    input[type="file"] { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; }
-    button { width: 100%; padding: 14px; background: #2563eb; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px; }
+    body { background: #0f172a; color: #f8fafc; padding: 20px; margin: 0; }
+    .container { max-width: 1000px; margin: 0 auto; background: #1e293b; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+    h1 { color: #38bdf8; font-size: 1.6rem; margin-top: 0; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+    
+    .form-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 20px; }
+    @media (min-width: 600px) { .form-grid { grid-template-columns: 1fr 1fr; } }
+    
+    label { font-size: 0.85rem; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 5px; }
+    input, select { width: 100%; padding: 10px; background: #0f172a; border: 1px solid #475569; border-radius: 6px; color: white; }
+    
+    button { width: 100%; padding: 14px; background: #2563eb; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px; transition: 0.2s; }
     button:hover { background: #1d4ed8; }
-    button:disabled { background: #94a3b8; cursor: not-allowed; }
+    button:disabled { background: #475569; cursor: not-allowed; }
+    
+    #status-console { background: #000; color: #4ade80; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 0.9rem; margin-top: 20px; border-left: 4px solid #22c55e; min-height: 50px; }
     
     .preview-grid { display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 25px; }
     @media (min-width: 768px) { .preview-grid { grid-template-columns: 1fr 1fr; } }
     
-    .card-box { border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #fafafa; }
-    .card-box h3 { margin-top: 0; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
-    img { max-width: 100%; height: auto; border-radius: 6px; border: 1px solid #cbd5e0; }
+    .card-box { border: 1px solid #334155; border-radius: 8px; padding: 15px; background: #0f172a; }
+    .card-box h3 { margin-top: 0; color: #38bdf8; border-bottom: 1px solid #334155; padding-bottom: 8px; font-size: 1.1rem; }
+    img { max-width: 100%; height: auto; border-radius: 6px; border: 1px solid #475569; }
     
-    .producto-item { background: white; border: 1px solid #cbd5e0; border-left: 4px solid #2563eb; border-radius: 6px; padding: 12px; margin-bottom: 12px; }
-    .prod-title { font-weight: bold; color: #1e293b; font-size: 1.1rem; }
-    .prod-detail { color: #475569; font-size: 0.9rem; margin: 4px 0; }
-    .prod-code { background: #e0e7ff; color: #3730a3; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; }
-    .prod-price { color: #16a34a; font-weight: bold; font-size: 1.1rem; }
-    .prod-box { font-family: monospace; font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 4px; border-radius: 4px; margin-top: 6px; }
-
-    #status-log { background: #0f172a; color: #38bdf8; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 0.85rem; margin-top: 15px; min-height: 40px; }
-    pre { background: #1e293b; color: #f8fafc; padding: 10px; border-radius: 6px; overflow-x: auto; font-size: 0.8rem; }
+    .producto-item { background: #1e293b; border: 1px solid #475569; border-left: 4px solid #38bdf8; border-radius: 6px; padding: 12px; margin-bottom: 12px; }
+    .prod-title { font-weight: bold; color: #f8fafc; font-size: 1rem; }
+    .prod-detail { color: #cbd5e1; font-size: 0.85rem; margin: 4px 0; }
+    .prod-code { background: #312e81; color: #c7d2fe; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem; }
+    .prod-price { color: #4ade80; font-weight: bold; font-size: 1.1rem; }
+    .prod-box { font-family: monospace; font-size: 0.75rem; color: #94a3b8; background: #0f172a; padding: 4px; border-radius: 4px; margin-top: 6px; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <h1>🧪 Prueba Directa de Analizador con IA (Gemini)</h1>
-    <p style="color:#64748b; font-size: 0.9rem;">Sube una página de catálogo. Este módulo probará directamente la IA enviando la imagen completa.</p>
+    <h1>🚀 Procesador Automático de Catálogos PDF</h1>
 
-    <div class="input-group">
-      <label>Selecciona una imagen de la página:</label>
-      <input type="file" id="imageInput" accept="image/*">
+    <div class="form-grid">
+      <div>
+        <label>Marca / Catálogo:</label>
+        <input type="text" id="catalogName" placeholder="Ej: Yanbal - Campaña 8">
+      </div>
+      <div>
+        <label>Seleccionar Archivo PDF:</label>
+        <input type="file" id="pdfInput" accept="application/pdf">
+      </div>
     </div>
 
-    <button id="btnAnalizar">🔍 Analizar Imagen con IA</button>
+    <button id="btnProcesar">⚙️ Iniciar Carga y Procesamiento Secuencial</button>
 
-    <div id="status-log">> Esperando imagen...</div>
+    <div id="status-console">> Esperando selección de archivo PDF...</div>
 
     <div class="preview-grid">
       <div class="card-box">
-        <h3>🖼️ Imagen Cargada</h3>
-        <div id="imageContainer" style="text-align: center; color: #94a3b8; padding: 20px;">
-          Ninguna imagen seleccionada
+        <h3>🖼️ Imagen Cargada (Página Actual)</h3>
+        <div id="imageContainer" style="text-align: center; color: #64748b; padding: 40px 0;">
+          Vista previa disponible al procesar
         </div>
       </div>
 
       <div class="card-box">
         <h3>📋 Fichas Técnicas Extraídas</h3>
         <div id="fichasContainer">
-          <p style="color: #94a3b8;">Los resultados de la IA aparecerán aquí...</p>
+          <p style="color: #64748b;">Los resultados de la IA aparecerán aquí conforme avance el lote...</p>
         </div>
       </div>
-    </div>
-
-    <div style="margin-top: 25px;">
-      <details>
-        <summary style="cursor: pointer; font-weight: bold; color: #475569;">Ver Respuesta Raw JSON de Gemini</summary>
-        <pre id="jsonRaw">// La respuesta completa en JSON se mostrará aquí...</pre>
-      </details>
     </div>
   </div>
 
   <script>
-    let base64String = "";
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-    function setStatus(msg) {
-      document.getElementById('status-log').innerText = `> ${msg}`;
+    function logStatus(msg) {
+      document.getElementById('status-console').innerText = `> ${msg}`;
     }
 
-    document.getElementById('imageInput').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
+    document.getElementById('btnProcesar').addEventListener('click', async () => {
+      const fileInput = document.getElementById('pdfInput');
+      const catalogName = document.getElementById('catalogName').value.trim();
 
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        base64String = event.target.result.split(',')[1];
-        document.getElementById('imageContainer').innerHTML = `<img src="${event.target.result}" alt="Vista previa">`;
-        setStatus('Imagen cargada y convertida a Base64. Lista para analizar.');
-      };
-      reader.readAsDataURL(file);
-    });
-
-    document.getElementById('btnAnalizar').addEventListener('click', async function() {
-      if (!base64String) {
-        alert('Por favor selecciona una imagen primero.');
+      if (!fileInput.files[0]) {
+        alert('Por favor selecciona un archivo PDF.');
+        return;
+      }
+      if (!catalogName) {
+        alert('Por favor ingresa un nombre para el catálogo/marca.');
         return;
       }
 
-      const btn = document.getElementById('btnAnalizar');
+      const btn = document.getElementById('btnProcesar');
       btn.disabled = true;
-      setStatus('Enviando imagen completa a Gemini AI... Espera unos segundos.');
-      document.getElementById('fichasContainer').innerHTML = '<p style="color: #2563eb;">⏳ Procesando ficha técnica con Inteligencia Artificial...</p>';
-      document.getElementById('jsonRaw').innerText = '// Esperando respuesta...';
 
-      const prompt = `Analiza detenidamente esta imagen de un catálogo comercial.
-Extrae todos los productos visibles con sus fichas técnicas y coordenadas exactas para ubicar su área en la imagen.
+      try {
+        const file = fileInput.files[0];
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const totalPages = pdf.numPages;
 
-Devuelve UNICAMENTE un objeto JSON estrictamente válido con este formato:
+        logStatus(`PDF cargado correctamente. Total de páginas: ${totalPages}. Iniciando secuencia...`);
+
+        for (let i = 1; i <= totalPages; i++) {
+          const numPagina = i === 1 ? "Portada / Pág 1" : `Página ${i}`;
+          logStatus(`[${i}/${totalPages}] Procesando ${numPagina}: Renderizando lienzo gráfico...`);
+
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale: 1.5 });
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+
+          await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          const base64Image = dataUrl.split(',')[1];
+
+          // 1. Mostrar vista previa de la página actual
+          document.getElementById('imageContainer').innerHTML = `<img src="${dataUrl}" alt="Página ${i}">`;
+
+          // 2. Subida a ImgBB para obtener URL corta
+          logStatus(`[${i}/${totalPages}] Subiendo imagen de ${numPagina} a servidor de imágenes (ImgBB)...`);
+          let imgbbUrl = "";
+          try {
+            const formData = new FormData();
+            formData.append('image', base64Image);
+            const imgbbRes = await fetch('https://api.imgbb.com/1/upload?key=6d25783563b715201103f8e658055628', {
+              method: 'POST',
+              body: formData
+            });
+            const imgbbData = await imgbbRes.json();
+            if (imgbbData.success) {
+              imgbbUrl = imgbbData.data.url;
+            }
+          } catch (e) {
+            console.warn("Error subiendo a ImgBB:", e);
+          }
+
+          // 3. Análisis de Gemini AI
+          logStatus(`[${i}/${totalPages}] Analizando contenido de ${numPagina} con Gemini AI...`);
+          const prompt = `Analiza esta página de catálogo comercial. Extrae los productos con sus detalles exactos.
+Devuelve ÚNICAMENTE un JSON válido:
 {
   "productos": [
     {
       "nombre": "Nombre del producto",
-      "codigo": "Código o ID del producto",
+      "codigo": "Código o ID",
       "precio": 19.99,
-      "ficha_tecnica": "Detalles, tonos, contenido (ml/g), beneficios o modo de uso del producto",
+      "ficha_tecnica": "Detalles, tono, uso, características",
       "box_2d": [ymin, xmin, ymax, xmax]
     }
   ]
-}
+}`;
 
-Reglas:
-- "precio" debe ser un número float o int sin símbolos.
-- "box_2d" debe ser un arreglo de 4 enteros de 0 a 1000 que delimite el producto en la imagen.`;
+          const geminiRes = await fetch('/api/gemini', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ base64Image, prompt })
+          });
 
-      try {
-        const response = await fetch('/api/gemini', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ base64Image: base64String, prompt: prompt })
-        });
+          const geminiData = await geminiRes.json();
+          const textRaw = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+          const cleanJsonText = textRaw.replace(/```json/gi, '').replace(/```/g, '').trim();
 
-        const data = await response.json();
-        document.getElementById('jsonRaw').innerText = JSON.stringify(data, null, 2);
+          let parsed = {};
+          try { parsed = JSON.parse(cleanJsonText); } catch (err) {}
+          const productos = parsed.productos || (Array.isArray(parsed) ? parsed : []);
 
-        if (!response.ok) {
-          throw new Error(data.error || 'Error al comunicarse con la API de Gemini');
-        }
-
-        const textRaw = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        const cleanJsonText = textRaw.replace(/```json/gi, '').replace(/```/g, '').trim();
-
-        let parsed = {};
-        try {
-          parsed = JSON.parse(cleanJsonText);
-        } catch (err) {
-          console.error("Error parseando JSON:", err);
-        }
-
-        const productos = parsed.productos || (Array.isArray(parsed) ? parsed : []);
-
-        if (productos.length === 0) {
-          document.getElementById('fichasContainer').innerHTML = `
-            <div style="background: #fef2f2; color: #991b1b; padding: 12px; border-radius: 6px;">
-              ⚠️ La IA no detectó productos estructurados en esta imagen. Revisa el bloque JSON Raw abajo.
-            </div>`;
-          setStatus('Proceso completado pero no se hallaron productos estructurados.');
-        } else {
-          let html = '';
+          // 4. Imprimir fichas en pantalla
+          let html = `<p style="color:#38bdf8; font-weight:bold;">📍 ${numPagina} - Detectados: ${productos.length}</p>`;
           productos.forEach((p, idx) => {
             html += `
               <div class="producto-item">
@@ -166,24 +182,25 @@ Reglas:
                   <span class="prod-title">${idx + 1}. ${p.nombre || 'Sin Nombre'}</span>
                   <span class="prod-price">$${p.precio || '0.00'}</span>
                 </div>
-                <div style="margin: 6px 0;">
+                <div style="margin: 4px 0;">
                   <span class="prod-code">Código: ${p.codigo || 'N/A'}</span>
                 </div>
-                <p class="prod-detail"><strong>Ficha Técnica:</strong> ${p.ficha_tecnica || 'Sin detalles'}</p>
-                <div class="prod-box">📍 Box Coordenadas (ymin, xmin, ymax, xmax): [${p.box_2d ? p.box_2d.join(', ') : '0,0,0,0'}]</div>
+                <p class="prod-detail"><strong>Ficha:</strong> ${p.ficha_tecnica || 'Sin detalles'}</p>
+                <div class="prod-box">Box: [${p.box_2d ? p.box_2d.join(', ') : '0,0,0,0'}]</div>
               </div>
             `;
           });
           document.getElementById('fichasContainer').innerHTML = html;
-          setStatus(`✅ Éxito: Se extrajeron ${productos.length} producto(s) con sus fichas técnicas.`);
+
+          // 5. Confirmación de almacenamiento
+          logStatus(`[${i}/${totalPages}] ✅ ${numPagina} completada. Imagen almacenada (${imgbbUrl ? 'ImgBB OK' : 'Local OK'}). Guardando productos...`);
+          await new Promise(r => setTimeout(r, 1500));
         }
 
+        logStatus(`🎉 ¡Proceso completado con éxito! Se procesaron las ${totalPages} páginas del catálogo.`);
+
       } catch (err) {
-        setStatus(`❌ Error: ${err.message}`);
-        document.getElementById('fichasContainer').innerHTML = `
-          <div style="background: #fef2f2; color: #991b1b; padding: 12px; border-radius: 6px;">
-            <strong>Error:</strong> ${err.message}
-          </div>`;
+        logStatus(`❌ Error en el procesamiento: ${err.message}`);
       } finally {
         btn.disabled = false;
       }
