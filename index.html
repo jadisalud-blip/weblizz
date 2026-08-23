@@ -4,29 +4,39 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Beauty Shop - Catálogos Virtuales</title>
+  
+  <!-- Firebase SDKs (Compatibilidad) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
   <style>
     * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
     body { background: #000000; color: #f8fafc; margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between; }
     
+    /* Header */
     header { padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
-    .logo { font-size: 1.5rem; font-weight: 900; color: #ff007f; text-shadow: 0 0 10px rgba(255,0,127,0.6); }
+    .logo { font-size: 1.5rem; font-weight: 900; color: #ff007f; text-shadow: 0 0 10px rgba(255,0,127,0.6); letter-spacing: 1px; }
     .user-badge { background: #111; border: 1px solid #ff007f; color: #ff007f; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; }
 
-    .hero-container { display: grid; grid-template-columns: 1fr; gap: 30px; max-width: 1100px; margin: 40px auto; padding: 0 20px; align-items: center; width: 100%; }
+    /* Layout principal */
+    .hero-container { display: grid; grid-template-columns: 1fr; gap: 30px; max-width: 1100px; margin: 40px auto; padding: 0 20px; align-items: start; width: 100%; }
     @media (min-width: 768px) { .hero-container { grid-template-columns: 1fr 1fr; } }
 
-    .hero-text h1 { font-size: 2.8rem; margin: 0 0 15px 0; color: #ffffff; }
+    .hero-text h1 { font-size: 2.8rem; margin: 0 0 15px 0; color: #ffffff; line-height: 1.1; }
     .hero-text h1 span { color: #ff007f; text-shadow: 0 0 15px rgba(255,0,127,0.5); }
     .hero-text p { color: #aaa; font-size: 1rem; margin-bottom: 25px; }
 
     .btn-unete { background: #ff007f; color: white; padding: 14px 28px; border-radius: 30px; font-weight: bold; font-size: 1rem; border: none; cursor: pointer; box-shadow: 0 0 20px rgba(255,0,127,0.6); transition: 0.2s; }
     .btn-unete:hover { background: #e0006e; transform: scale(1.03); }
 
+    /* Contenedor de Tarjetas Dinámicas */
     .cards-wrapper { display: flex; flex-direction: column; gap: 15px; }
-    .neon-card { background: #0a0a0a; border: 1px solid #333; border-left: 4px solid #ff007f; border-radius: 10px; padding: 20px; transition: 0.3s; cursor: pointer; }
-    .neon-card:hover { border-color: #ff007f; box-shadow: 0 0 15px rgba(255,0,127,0.2); }
-    .neon-card h3 { margin: 0 0 5px 0; color: #ff007f; }
+    .neon-card { background: #0a0a0a; border: 1px solid #222; border-left: 4px solid #ff007f; border-radius: 10px; padding: 20px; transition: 0.3s; cursor: pointer; position: relative; }
+    .neon-card:hover { border-color: #ff007f; box-shadow: 0 0 15px rgba(255,0,127,0.25); transform: translateY(-2px); }
+    .neon-card h3 { margin: 0 0 5px 0; color: #ff007f; font-size: 1.2rem; }
     .neon-card p { margin: 0; color: #888; font-size: 0.85rem; }
+    .card-tag { position: absolute; top: 15px; right: 15px; background: #111; color: #ff007f; font-size: 0.7rem; padding: 3px 8px; border-radius: 4px; border: 1px solid #ff007f; font-weight: bold; }
 
     /* Modal de Registro Rápido */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 100; }
@@ -36,7 +46,6 @@
     .modal-content input { width: 100%; padding: 12px; background: #111; border: 1px solid #444; border-radius: 6px; color: white; font-size: 1rem; }
     .modal-content input:focus { border-color: #ff007f; outline: none; }
     .btn-guardar { width: 100%; margin-top: 20px; background: #ff007f; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-    .btn-guardar:hover { background: #e0006e; }
 
     footer { text-align: center; padding: 20px; color: #555; font-size: 0.8rem; border-top: 1px solid #111; }
   </style>
@@ -50,92 +59,148 @@
 
   <div class="hero-container">
     <div class="hero-text">
-      <h1>Cosméticos de <span>Élite</span> a un clic</h1>
-      <p>Explora los catálogos digitales de Ébel, Yanbal y Ésika. Regístrate en 5 segundos y arma tu pedido virtual.</p>
-      <button class="btn-unete" onclick="abrirModalRegistro()">¡Únete Ahora!</button>
+      <h1>Catálogos de <span>Élite</span> a un clic</h1>
+      <p>Explora nuestras ofertas activas en cosmética, fragancias y accesorios. Regístrate en segundos y arma tu pedido virtual directamente por redes.</p>
+      <button class="btn-unete" id="btnMainAuth" onclick="abrirModalRegistro()">¡Únete Ahora!</button>
     </div>
 
-    <div class="cards-wrapper">
-      <div class="neon-card" onclick="verificarAccesoCatalogo('Ébel')">
-        <h3>✨ Ébel - Campaña Actual</h3>
-        <p>Fragancias exclusivas y tratamiento facial.</p>
-      </div>
-      <div class="neon-card" onclick="verificarAccesoCatalogo('Yanbal')">
-        <h3>💎 Yanbal - Edición Especial</h3>
-        <p>Joyas y perfumería fina.</p>
-      </div>
+    <!-- Las tarjetas se cargan automáticamente de Firestore -->
+    <div class="cards-wrapper" id="catalogsList">
+      <div style="color: #666; font-size: 0.9rem;">Cargando catálogos disponibles...</div>
     </div>
   </div>
 
   <!-- Modal de Registro Flash -->
   <div id="modalRegistro" class="modal">
     <div class="modal-content">
-      <h2>✨ Regístrate Rápido</h2>
-      <p style="font-size: 0.85rem; color: #888;">Ingresa tus datos para guardar tus pedidos.</p>
+      <h2>✨ Registro Rápido</h2>
+      <p style="font-size: 0.85rem; color: #888;">Ingresa tus datos de contacto para gestionar tu carrito de compras.</p>
       
-      <label>Tu Nombre:</label>
+      <label>Tu Nombre Completo:</label>
       <input type="text" id="nombreUsuario" placeholder="Ej: María Pérez">
       
-      <label>Número de Celular:</label>
+      <label>Número de Celular (WhatsApp):</label>
       <input type="tel" id="celularUsuario" placeholder="Ej: 0991234567">
+
+      <label>Correo Electrónico (Opcional):</label>
+      <input type="email" id="correoUsuario" placeholder="Ej: maria@gmail.com">
       
-      <button class="btn-guardar" onclick="guardarUsuario()">¡Listo, Comenzar!</button>
+      <button class="btn-guardar" onclick="guardarUsuario()">¡Comenzar a Comprar!</button>
     </div>
   </div>
 
-  <footer>&copy; 2026 Beauty Shop - Todos los derechos reservados.</footer>
+  <footer>&copy; 2026 Beauty Shop - Plataforma de Venta Directa</footer>
 
   <script>
-    // Al cargar la página, revisar si ya se registró
+    // Configuración de tu proyecto en Firebase
+    const firebaseConfig = {
+      apiKey: "TU_FIREBASE_API_KEY",
+      authDomain: "weblizz.firebaseapp.com",
+      projectId: "weblizz",
+      storageBucket: "weblizz.appspot.com",
+      messagingSenderId: "TU_SENDER_ID",
+      appId: "TU_APP_ID"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const ADMIN_PASS = "admin123"; // Clave rápida para administrador desde el registro
+
     window.onload = function() {
+      comprobarUsuario();
+      cargarCatalogosDinamicos();
+    };
+
+    function comprobarUsuario() {
       const clienteGuardado = localStorage.getItem("beauty_cliente");
       if (clienteGuardado) {
         const cliente = JSON.parse(clienteGuardado);
         document.getElementById("userSession").innerText = `Hola, ${cliente.nombre}`;
+        document.getElementById("btnMainAuth").innerText = "Perfil / Sesión Activa";
       }
-    };
+    }
 
     function abrirModalRegistro() {
       const clienteGuardado = localStorage.getItem("beauty_cliente");
       if (clienteGuardado) {
         const cliente = JSON.parse(clienteGuardado);
-        alert(`Ya estás registrado como ${cliente.nombre}. ¡Puedes ver los catálogos!`);
+        alert(`Sesión activa como: ${cliente.nombre}\nCelular: ${cliente.celular}`);
         return;
       }
       document.getElementById("modalRegistro").style.display = "flex";
     }
 
-    function guardarUsuario() {
+    async function guardarUsuario() {
       const nombre = document.getElementById("nombreUsuario").value.trim();
       const celular = document.getElementById("celularUsuario").value.trim();
+      const correo = document.getElementById("correoUsuario").value.trim();
 
-      // Validación especial por si ingresa la clave secreta de administrador de tu esposa
-      if (nombre.toLowerCase() === "admin" && celular === "1234") { // Esto lo ajustaremos luego con clave segura
+      // Acceso rápido para el Administrador
+      if (nombre.toLowerCase() === "admin" && celular === ADMIN_PASS) {
         window.location.href = "admin.html";
         return;
       }
 
       if (!nombre || !celular) {
-        alert("Por favor ingresa tu nombre y tu número celular.");
+        alert("Por favor ingresa tu nombre y número de celular para completar tus pedidos.");
         return;
       }
 
-      const clienteData = { nombre, celular };
-      localStorage.setItem("beauty_cliente", JSON.stringify(clienteData));
-      
-      document.getElementById("userSession").innerText = `Hola, ${nombre}`;
-      document.getElementById("modalRegistro").style.display = "none";
-      alert(`¡Bienvenida/o ${nombre}! Ya puedes seleccionar tus productos.`);
+      const clienteData = { nombre, celular, correo: correo || "N/A", fecha: new Date() };
+
+      // Guardar en Firestore e Historial Local
+      try {
+        await db.collection("usuarios").add(clienteData);
+        localStorage.setItem("beauty_cliente", JSON.stringify(clienteData));
+        
+        document.getElementById("userSession").innerText = `Hola, ${nombre}`;
+        document.getElementById("modalRegistro").style.display = "none";
+        alert(`¡Registro exitoso ${nombre}! Ya puedes explorar los catálogos e ir agregando productos.`);
+      } catch (e) {
+        console.error("Error al registrar:", e);
+        localStorage.setItem("beauty_cliente", JSON.stringify(clienteData));
+        document.getElementById("modalRegistro").style.display = "none";
+      }
     }
 
-    function verificarAccesoCatalogo(marca) {
-      const clienteGuardado = localStorage.getItem("beauty_cliente");
-      if (!clienteGuardado) {
-        alert("¡Hola! Por favor dale al botón '¡Únete Ahora!' para registrarte con tu nombre y celular antes de ver los catálogos.");
+    // Cargar catálogos dinámicamente desde la Base de Datos
+    function cargarCatalogosDinamicos() {
+      const wrapper = document.getElementById("catalogsList");
+      
+      db.collection("catalogos").onSnapshot((snapshot) => {
+        if (snapshot.empty) {
+          wrapper.innerHTML = `
+            <div class="neon-card">
+              <h3>✨ Ébel / Yanbal / Ésika</h3>
+              <p>Esperando la carga del primer catálogo desde el panel de administración...</p>
+            </div>`;
+          return;
+        }
+
+        let html = "";
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          html += `
+            <div class="neon-card" onclick="abrirCatalogo('${doc.id}', '${data.nombre}')">
+              <span class="card-tag">DISPONIBLE</span>
+              <h3>✨ ${data.nombre}</h3>
+              <p>${data.descripcion || 'Haz clic para explorar los productos e iniciar tu pedido.'}</p>
+            </div>`;
+        });
+
+        wrapper.innerHTML = html;
+      });
+    }
+
+    function abrirCatalogo(id, nombre) {
+      const cliente = localStorage.getItem("beauty_cliente");
+      if (!cliente) {
+        alert("Regístrate rápidamente con tu nombre y celular para ver el catálogo interactivo.");
         abrirModalRegistro();
       } else {
-        alert(`Abriendo el catálogo interactivo de ${marca}...`);
-        // Aquí luego abriremos la vista del catálogo con los checkboxes
+        // Redirección al visor con checkbox
+        window.location.href = `catalogo.html?id=${id}`;
       }
     }
   </script>
