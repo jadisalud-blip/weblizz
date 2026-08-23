@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beauty Shop - Visor de Catálogo</title>
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: #000000; color: #f8fafc; margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; }
+    
+    header { padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; background: #050505; position: sticky; top: 0; z-index: 50; }
+    .btn-back { background: transparent; color: #ff007f; border: 1px solid #ff007f; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+    .catalog-title { font-size: 1.2rem; font-weight: bold; color: #fff; }
+
+    /* Layout principal */
+    .catalog-container { max-width: 900px; margin: 20px auto; padding: 0 15px; width: 100%; flex: 1; }
+    
+    /* Contenedor de la página/imagen */
+    .page-viewer { position: relative; width: 100%; background: #111; border-radius: 12px; overflow: hidden; border: 1px solid #333; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+    .page-viewer img { width: 100%; display: block; height: auto; }
+
+    /* Overlay de hotspots interactivos */
+    .product-hotspot { position: absolute; border: 2px dashed #ff007f; background: rgba(255, 0, 127, 0.15); border-radius: 6px; cursor: pointer; transition: 0.2s; }
+    .product-hotspot:hover { background: rgba(255, 0, 127, 0.35); border-style: solid; }
+    .product-hotspot.selected { background: rgba(0, 255, 128, 0.3); border-color: #00ff80; }
+
+    /* Navegación entre páginas */
+    .page-controls { display: flex; justify-content: space-between; align-items: center; margin: 20px 0; }
+    .btn-nav { background: #111; color: #fff; border: 1px solid #444; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    .btn-nav:disabled { opacity: 0.3; cursor: not-allowed; }
+    .page-info { color: #888; font-size: 0.9rem; }
+
+    /* Lista de productos detectados en la página actual */
+    .products-list { background: #0a0a0a; border: 1px solid #222; border-radius: 12px; padding: 20px; margin-top: 20px; }
+    .products-list h3 { margin-top: 0; color: #ff007f; font-size: 1.1rem; }
+    .product-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #1a1a1a; }
+    .product-item:last-child { border-bottom: none; }
+    .product-info { flex: 1; margin-right: 15px; }
+    .product-name { font-weight: bold; font-size: 0.95rem; color: #eee; }
+    .product-price { color: #ff007f; font-weight: bold; font-size: 0.9rem; margin-top: 2px; }
+    .product-check { width: 22px; height: 22px; accent-color: #ff007f; cursor: pointer; }
+
+    /* Barra flotante inferior de pedido */
+    .cart-bar { position: sticky; bottom: 0; background: #0a0a0a; border-top: 1px solid #222; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; z-index: 50; }
+    .cart-summary { font-size: 1rem; color: #fff; }
+    .cart-summary span { color: #00ff80; font-weight: bold; }
+    .btn-send-order { background: #25D366; color: #fff; border: none; padding: 12px 24px; border-radius: 25px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; box-shadow: 0 0 15px rgba(37, 211, 102, 0.4); }
+    .btn-send-order:hover { background: #1eb956; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <button class="btn-back" onclick="window.location.href='index.html'">← Volver</button>
+    <div class="catalog-title" id="catalogTitle">Cargando catálogo...</div>
+    <div></div>
+  </header>
+
+  <div class="catalog-container">
+    <!-- Control de páginas superior -->
+    <div class="page-controls">
+      <button class="btn-nav" id="btnPrevPage">← Anterior</button>
+      <span class="page-info" id="pageIndicator">Página 1 de 1</span>
+      <button class="btn-nav" id="btnNextPage">Siguiente →</button>
+    </div>
+
+    <!-- Visor de la imagen de la página con capa interactiva -->
+    <div class="page-viewer" id="pageViewer">
+      <img id="catalogPageImg" src="" alt="Página del Catálogo">
+      <div id="hotspotsContainer"></div>
+    </div>
+
+    <!-- Checkboxes / Lista interactiva de productos de la página -->
+    <div class="products-list">
+      <h3>🛒 Productos en esta página</h3>
+      <div id="productsContainer">
+        <p style="color: #666; font-size: 0.85rem;">Cargando productos de la página...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra Flotante de Carrito / WhatsApp -->
+  <div class="cart-bar">
+    <div class="cart-summary">
+      Seleccionados: <strong id="cartCount">0</strong> | Total: <span id="cartTotal">$0.00</span>
+    </div>
+    <button class="btn-send-order" id="btnSendWhatsApp">
+      📱 Enviar Pedido por WhatsApp
+    </button>
+  </div>
+
+  <script type="module" src="./js/catalogo.js"></script>
+</body>
+</html>
