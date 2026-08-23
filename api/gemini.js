@@ -14,8 +14,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'GEMINI_API_KEY no configurada en Vercel.' });
     }
 
-    // Nombre exacto del modelo actualizado: gemini-2.5-flash
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
+    // Modelo actualizado solicitado exactamente por la API de Google
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
