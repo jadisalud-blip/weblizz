@@ -1,50 +1,53 @@
-let carrito = [];
-let productoSeleccionado = null;
+import { db, auth, abrirModal } from './auth.js';
 
-function seleccionarProducto(codigo, nombre, precio) {
-  productoSeleccionado = { codigo, nombre, precio };
-  document.getElementById('modal-title').innerText = nombre;
-  document.getElementById('modal-code').innerText = `Código: ${codigo}`;
-  document.getElementById('modal-price').innerText = `$${precio.toFixed(2)}`;
-  document.getElementById('modal-product').style.display = 'flex';
-}
+document.addEventListener("DOMContentLoaded", () => {
+  cargarCatalogosDinamicos();
+});
 
-function cerrarModal() {
-  document.getElementById('modal-product').style.display = 'none';
-}
+function cargarCatalogosDinamicos() {
+  const wrapper = document.getElementById("catalogsList");
+  if (!wrapper) return;
 
-function agregarAlCarrito() {
-  if (productoSeleccionado) {
-    carrito.push(productoSeleccionado);
-    document.getElementById('cart-count').innerText = carrito.length;
-    cerrarModal();
-    alert('✅ Producto añadido al carrito.');
-  }
-}
+  db.collection("catalogos").onSnapshot((snapshot) => {
+    if (snapshot.empty) {
+      wrapper.innerHTML = `
+        <div class="neon-card">
+          <h3>✨ Catálogos en preparación</h3>
+          <p>Los nuevos catálogos subidos desde la administración aparecerán aquí automáticamente.</p>
+        </div>`;
+      return;
+    }
 
-function verCarrito() {
-  if (carrito.length === 0) {
-    alert('El carrito está vacío.');
-    return;
-  }
+    let html = "";
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      html += `
+        <div class="neon-card" data-id="${doc.id}">
+          <h3>✨ ${data.nombre || 'Marca'}</h3>
+          <p>${data.descripcion || 'Haz clic para explorar los productos e iniciar tu pedido.'}</p>
+        </div>`;
+    });
 
-  let texto = '🛍️ *MI PEDIDO DE CATÁLOGO*\n\n';
-  let total = 0;
+    wrapper.innerHTML = html;
 
-  carrito.forEach((p, idx) => {
-    texto += `${idx + 1}. [${p.codigo}] ${p.nombre} - $${p.precio.toFixed(2)}\n`;
-    total += p.precio;
+    // Asignar eventos de clic a las tarjetas dinámicas
+    wrapper.querySelectorAll('.neon-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const id = card.getAttribute('data-id');
+        abrirCatalogo(id);
+      });
+    });
   });
-
-  texto += `\n*TOTAL ESTIMADO:* $${total.toFixed(2)}`;
-  
-  const numeroWhatsApp = '593900000000'; // Reemplazar con el número oficial
-  const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(texto)}`;
-  
-  window.open(urlWhatsApp, '_blank');
 }
 
-window.seleccionarProducto = seleccionarProducto;
-window.cerrarModal = cerrarModal;
-window.agregarAlCarrito = agregarAlCarrito;
-window.verCarrito = verCarrito;
+function abrirCatalogo(id) {
+  const clienteLocal = localStorage.getItem("beauty_cliente");
+  const userFirebase = auth.currentUser;
+
+  if (!clienteLocal && !userFirebase) {
+    alert("Inicia sesión primero para acceder al catálogo.");
+    abrirModal();
+  } else {
+    window.location.href = `catalogo.html?id=${id}`;
+  }
+}
