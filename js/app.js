@@ -1,53 +1,32 @@
-import { db, auth, abrirModal } from './auth.js';
+import { db } from './firebase-config.js';
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-document.addEventListener("DOMContentLoaded", () => {
-  cargarCatalogosDinamicos();
-});
+document.addEventListener("DOMContentLoaded", cargarCatalogos);
 
-function cargarCatalogosDinamicos() {
-  const wrapper = document.getElementById("catalogsList");
-  if (!wrapper) return;
+async function cargarCatalogos() {
+  const grid = document.getElementById("catalogGrid");
+  try {
+    const querySnapshot = await getDocs(collection(db, "catalogos"));
+    grid.innerHTML = "";
 
-  db.collection("catalogos").onSnapshot((snapshot) => {
-    if (snapshot.empty) {
-      wrapper.innerHTML = `
-        <div class="neon-card">
-          <h3>✨ Catálogos en preparación</h3>
-          <p>Los nuevos catálogos subidos desde la administración aparecerán aquí automáticamente.</p>
-        </div>`;
+    if (querySnapshot.empty) {
+      grid.innerHTML = `<p style="color: var(--text-muted);">No hay catálogos activos por ahora.</p>`;
       return;
     }
 
-    let html = "";
-    snapshot.forEach((doc) => {
+    querySnapshot.forEach((doc) => {
       const data = doc.data();
-      html += `
-        <div class="neon-card" data-id="${doc.id}">
-          <h3>✨ ${data.nombre || 'Marca'}</h3>
-          <p>${data.descripcion || 'Haz clic para explorar los productos e iniciar tu pedido.'}</p>
-        </div>`;
+      const item = document.createElement("div");
+      item.className = "catalog-item";
+      item.innerHTML = `
+        <h3 style="margin-bottom: 0.5rem;">${data.nombre}</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">Total Páginas: ${data.totalPaginas}</p>
+        <a href="catalogo.html?id=${doc.id}" class="btn-main">Ver Catálogo</a>
+      `;
+      grid.appendChild(item);
     });
-
-    wrapper.innerHTML = html;
-
-    // Asignar eventos de clic a las tarjetas dinámicas
-    wrapper.querySelectorAll('.neon-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const id = card.getAttribute('data-id');
-        abrirCatalogo(id);
-      });
-    });
-  });
-}
-
-function abrirCatalogo(id) {
-  const clienteLocal = localStorage.getItem("beauty_cliente");
-  const userFirebase = auth.currentUser;
-
-  if (!clienteLocal && !userFirebase) {
-    alert("Inicia sesión primero para acceder al catálogo.");
-    abrirModal();
-  } else {
-    window.location.href = `catalogo.html?id=${id}`;
+  } catch (error) {
+    console.error("Error al cargar catálogos:", error);
+    grid.innerHTML = `<p style="color: red;">Error al cargar datos.</p>`;
   }
 }
