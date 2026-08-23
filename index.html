@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Beauty Shop - Catálogos Virtuales</title>
   
-  <!-- Firebase SDKs (Compatibilidad) -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -14,12 +14,10 @@
     * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
     body { background: #000000; color: #f8fafc; margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between; }
     
-    /* Header */
     header { padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
     .logo { font-size: 1.5rem; font-weight: 900; color: #ff007f; text-shadow: 0 0 10px rgba(255,0,127,0.6); letter-spacing: 1px; }
     .user-badge { background: #111; border: 1px solid #ff007f; color: #ff007f; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; }
 
-    /* Layout principal */
     .hero-container { display: grid; grid-template-columns: 1fr; gap: 30px; max-width: 1100px; margin: 40px auto; padding: 0 20px; align-items: start; width: 100%; }
     @media (min-width: 768px) { .hero-container { grid-template-columns: 1fr 1fr; } }
 
@@ -30,7 +28,6 @@
     .btn-unete { background: #ff007f; color: white; padding: 14px 28px; border-radius: 30px; font-weight: bold; font-size: 1rem; border: none; cursor: pointer; box-shadow: 0 0 20px rgba(255,0,127,0.6); transition: 0.2s; }
     .btn-unete:hover { background: #e0006e; transform: scale(1.03); }
 
-    /* Contenedor de Tarjetas Dinámicas */
     .cards-wrapper { display: flex; flex-direction: column; gap: 15px; }
     .neon-card { background: #0a0a0a; border: 1px solid #222; border-left: 4px solid #ff007f; border-radius: 10px; padding: 20px; transition: 0.3s; cursor: pointer; position: relative; }
     .neon-card:hover { border-color: #ff007f; box-shadow: 0 0 15px rgba(255,0,127,0.25); transform: translateY(-2px); }
@@ -38,7 +35,7 @@
     .neon-card p { margin: 0; color: #888; font-size: 0.85rem; }
     .card-tag { position: absolute; top: 15px; right: 15px; background: #111; color: #ff007f; font-size: 0.7rem; padding: 3px 8px; border-radius: 4px; border: 1px solid #ff007f; font-weight: bold; }
 
-    /* Modal de Registro Rápido */
+    /* Modal de Registro Express */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 100; }
     .modal-content { background: #0a0a0a; border: 2px solid #ff007f; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 0 25px rgba(255,0,127,0.5); }
     .modal-content h2 { color: #ff007f; margin-top: 0; font-size: 1.4rem; }
@@ -60,11 +57,11 @@
   <div class="hero-container">
     <div class="hero-text">
       <h1>Catálogos de <span>Élite</span> a un clic</h1>
-      <p>Explora nuestras ofertas activas en cosmética, fragancias y accesorios. Regístrate en segundos y arma tu pedido virtual directamente por redes.</p>
+      <p>Explora nuestras ofertas activas en cosmética, fragancias y productos. Regístrate en segundos y arma tu pedido virtual directamente por WhatsApp.</p>
       <button class="btn-unete" id="btnMainAuth" onclick="abrirModalRegistro()">¡Únete Ahora!</button>
     </div>
 
-    <!-- Las tarjetas se cargan automáticamente de Firestore -->
+    <!-- Las tarjetas se generan dinámicamente desde Firestore -->
     <div class="cards-wrapper" id="catalogsList">
       <div style="color: #666; font-size: 0.9rem;">Cargando catálogos disponibles...</div>
     </div>
@@ -74,7 +71,7 @@
   <div id="modalRegistro" class="modal">
     <div class="modal-content">
       <h2>✨ Registro Rápido</h2>
-      <p style="font-size: 0.85rem; color: #888;">Ingresa tus datos de contacto para gestionar tu carrito de compras.</p>
+      <p style="font-size: 0.85rem; color: #888;">Ingresa tu nombre y celular para guardar tu carrito de compras.</p>
       
       <label>Tu Nombre Completo:</label>
       <input type="text" id="nombreUsuario" placeholder="Ej: María Pérez">
@@ -89,23 +86,21 @@
     </div>
   </div>
 
-  <footer>&copy; 2026 Beauty Shop - Plataforma de Venta Directa</footer>
+  <footer>&copy; 2026 Beauty Shop - Todos los derechos reservados.</footer>
 
   <script>
-    // Configuración de tu proyecto en Firebase
+    // Variables de entorno inyectadas desde el servidor/entorno
     const firebaseConfig = {
-      apiKey: "TU_FIREBASE_API_KEY",
-      authDomain: "weblizz.firebaseapp.com",
-      projectId: "weblizz",
-      storageBucket: "weblizz.appspot.com",
-      messagingSenderId: "TU_SENDER_ID",
-      appId: "TU_APP_ID"
+      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY,
+      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || process.env.VITE_FIREBASE_AUTH_DOMAIN,
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || process.env.VITE_FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || process.env.VITE_FIREBASE_APP_ID
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-
-    const ADMIN_PASS = "admin123"; // Clave rápida para administrador desde el registro
 
     window.onload = function() {
       comprobarUsuario();
@@ -117,7 +112,7 @@
       if (clienteGuardado) {
         const cliente = JSON.parse(clienteGuardado);
         document.getElementById("userSession").innerText = `Hola, ${cliente.nombre}`;
-        document.getElementById("btnMainAuth").innerText = "Perfil / Sesión Activa";
+        document.getElementById("btnMainAuth").innerText = "Perfil Activo";
       }
     }
 
@@ -136,27 +131,20 @@
       const celular = document.getElementById("celularUsuario").value.trim();
       const correo = document.getElementById("correoUsuario").value.trim();
 
-      // Acceso rápido para el Administrador
-      if (nombre.toLowerCase() === "admin" && celular === ADMIN_PASS) {
-        window.location.href = "admin.html";
-        return;
-      }
-
       if (!nombre || !celular) {
-        alert("Por favor ingresa tu nombre y número de celular para completar tus pedidos.");
+        alert("Por favor ingresa tu nombre y número de celular.");
         return;
       }
 
       const clienteData = { nombre, celular, correo: correo || "N/A", fecha: new Date() };
 
-      // Guardar en Firestore e Historial Local
       try {
         await db.collection("usuarios").add(clienteData);
         localStorage.setItem("beauty_cliente", JSON.stringify(clienteData));
         
         document.getElementById("userSession").innerText = `Hola, ${nombre}`;
         document.getElementById("modalRegistro").style.display = "none";
-        alert(`¡Registro exitoso ${nombre}! Ya puedes explorar los catálogos e ir agregando productos.`);
+        alert(`¡Bienvenida/o ${nombre}! Ya puedes explorar los catálogos e ir agregando productos.`);
       } catch (e) {
         console.error("Error al registrar:", e);
         localStorage.setItem("beauty_cliente", JSON.stringify(clienteData));
@@ -164,7 +152,6 @@
       }
     }
 
-    // Cargar catálogos dinámicamente desde la Base de Datos
     function cargarCatalogosDinamicos() {
       const wrapper = document.getElementById("catalogsList");
       
@@ -172,8 +159,8 @@
         if (snapshot.empty) {
           wrapper.innerHTML = `
             <div class="neon-card">
-              <h3>✨ Ébel / Yanbal / Ésika</h3>
-              <p>Esperando la carga del primer catálogo desde el panel de administración...</p>
+              <h3>✨ Catálogos Próximamente</h3>
+              <p>Tu esposa está subiendo los nuevos catálogos desde el panel. ¡Vuelve en unos minutos!</p>
             </div>`;
           return;
         }
@@ -182,10 +169,10 @@
         snapshot.forEach((doc) => {
           const data = doc.data();
           html += `
-            <div class="neon-card" onclick="abrirCatalogo('${doc.id}', '${data.nombre}')">
+            <div class="neon-card" onclick="abrirCatalogo('${doc.id}')">
               <span class="card-tag">DISPONIBLE</span>
               <h3>✨ ${data.nombre}</h3>
-              <p>${data.descripcion || 'Haz clic para explorar los productos e iniciar tu pedido.'}</p>
+              <p>${data.descripcion || 'Haz clic para seleccionar tus productos e iniciar tu pedido.'}</p>
             </div>`;
         });
 
@@ -193,13 +180,12 @@
       });
     }
 
-    function abrirCatalogo(id, nombre) {
+    function abrirCatalogo(id) {
       const cliente = localStorage.getItem("beauty_cliente");
       if (!cliente) {
-        alert("Regístrate rápidamente con tu nombre y celular para ver el catálogo interactivo.");
+        alert("Ingresa tu nombre y celular para ver el catálogo y hacer tus marcas de productos.");
         abrirModalRegistro();
       } else {
-        // Redirección al visor con checkbox
         window.location.href = `catalogo.html?id=${id}`;
       }
     }
