@@ -1,0 +1,16 @@
+# Carpetas de dependencias y compilación
+node_modules/
+dist/
+.vite/
+
+# Archivos de variables de entorno y credenciales (¡Importante no subirlos!)
+.env
+.env.local
+.env.production
+.env.development
+
+# Archivos de sistema y editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
