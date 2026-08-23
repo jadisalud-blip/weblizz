@@ -1,21 +1,24 @@
 {
-  "name": "Tienda Virtual Multimarca",
-  "short_name": "CatálogoApp",
+  "name": "Beauty Shop - Catálogos Virtuales",
+  "short_name": "BeautyShop",
   "description": "Tu tienda virtual e-commerce multimarca con catálogos interactivos.",
   "start_url": "/index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#e91e63",
+  "background_color": "#000000",
+  "theme_color": "#ff007f",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3081/3081559.png",
+      "src": "icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3081/3081559.png",
+      "src": "icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
