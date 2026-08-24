@@ -1,112 +1,93 @@
 import { db } from './firebase-config.js';
-import { collection, addDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
-// Configurar Worker de PDF.js
+// Configuración de PDF.js Worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-const getEnv = (key) => {
-  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[key]) {
-    return import.meta.env[key];
-  }
-  return '';
-};
+const formUploadCatalog = document.getElementById('formUploadCatalog');
+const nombreMarcaInput = document.getElementById('nombreMarca');
+const filePdfInput = document.getElementById('filePdf');
+const btnProcesar = document.getElementById('btnProcesar');
+const statusContainer = document.getElementById('statusContainer');
+const statusMessage = document.getElementById('statusMessage');
+const progressBar = document.getElementById('progressBar');
 
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("formUploadCatalog");
-  form?.addEventListener("submit", gestionarSubida);
-});
-
-async function gestionarSubida(e) {
+formUploadCatalog.addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  const nombreMarca = document.getElementById("nombreMarca").value.trim();
-  const fileInput = document.getElementById("filePdf");
-  const filePdf = fileInput.files[0];
-  const btnProcesar = document.getElementById("btnProcesar");
-  const statusContainer = document.getElementById("statusContainer");
-  const statusMessage = document.getElementById("statusMessage");
-  const progressBar = document.getElementById("progressBar");
+  const nombreMarca = nombreMarcaInput.value.trim();
+  const file = filePdfInput.files[0];
 
-  if (!filePdf) {
-    alert("Por favor selecciona un archivo PDF.");
-    return;
-  }
-
-  const imgbbApiKey = getEnv("VITE_IMGBB_API_KEY");
-  if (!imgbbApiKey) {
-    alert("Error: No se encontró la API Key de ImgBB en las variables de entorno.");
+  if (!nombreMarca || !file) {
+    alert('Por favor, ingresa el nombre de la marca y selecciona un archivo PDF.');
     return;
   }
 
   btnProcesar.disabled = true;
-  statusContainer.style.display = "block";
+  statusContainer.style.display = 'block';
+  statusMessage.innerText = 'Cargando archivo PDF...';
+  progressBar.value = 0;
 
   try {
-    const arrayBuffer = await filePdf.arrayBuffer();
-    const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    const totalPaginas = pdfDoc.numPages;
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const totalPages = pdf.numPages;
 
-    // 1. Crear documento principal en Firestore
-    const catalogRef = await addDoc(collection(db, "catalogos"), {
-      nombre: nombreMarca,
-      totalPaginas: totalPaginas,
-      fechaCreacion: new Date().toISOString()
-    });
+    const paginasGuardadas = [];
 
-    // 2. Procesar cada página del PDF
-    for (let pageNum = 1; pageNum <= totalPaginas; pageNum++) {
-      statusMessage.innerText = `Procesando Página ${pageNum} de ${totalPaginas}...`;
-      progressBar.value = Math.round(((pageNum - 1) / totalPaginas) * 100);
+    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+      statusMessage.innerText = `Procesando Página ${pageNum} de ${totalPages}...`;
+      progressBar.value = Math.round((pageNum / totalPages) * 100);
 
-      const page = await pdfDoc.getPage(pageNum);
+      const page = await pdf.getPage(pageNum);
       const viewport = page.getViewport({ scale: 1.5 });
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      canvas.width = viewport.width;
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
       canvas.height = viewport.height;
+      canvas.width = viewport.width;
 
-      await page.render({ canvasContext: ctx, viewport }).promise;
+      await page.render({ canvasContext: context, viewport: viewport }).promise;
 
-      // Convertir a WebP
-      const webpBase64 = canvas.toDataURL("image/webp", 0.85);
-      const base64Puro = webpBase64.split(',')[1];
+      // Convertir página a imagen Blob (WebP)
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', 0.8));
 
-      // 3. Subir a ImgBB
+      // Subida de imagen a ImgBB
       const formData = new FormData();
-      formData.append("image", base64Puro);
+      formData.append('image', blob);
 
-      const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
-        method: "POST",
+      // Reemplaza YOUR_IMGBB_API_KEY por tu API key de ImgBB
+      const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=YOUR_IMGBB_API_KEY`, {
+        method: 'POST',
         body: formData
       });
       const imgbbData = await imgbbRes.json();
-      const urlImagenPublica = imgbbData?.data?.url || "";
 
-      // 4. Procesar la imagen con Gemini IA via Serverless API
-      const geminiRes = await fetch("/api/gemini", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: webpBase64, numeroPagina: pageNum })
-      });
-      const dataIA = await geminiRes.json();
+      const imageUrl = imgbbData.data ? imgbbData.data.url : '';
 
-      // 5. Guardar página y productos en Firestore
-      await setDoc(doc(db, "catalogos", catalogRef.id, "paginas", `pagina_${pageNum}`), {
+      paginasGuardadas.push({
         numeroPagina: pageNum,
-        imageUrl: urlImagenPublica,
-        productos: dataIA.productos || []
+        imagenUrl: imageUrl
       });
     }
 
-    progressBar.value = 100;
-    statusMessage.innerText = "¡Catálogo procesado con éxito!";
-    alert(`¡El catálogo "${nombreMarca}" se ha procesado y guardado correctamente!`);
-    form.reset();
+    statusMessage.innerText = 'Guardando datos del catálogo en Firestore...';
+
+    // Guardar catálogo en Firestore
+    await addDoc(collection(db, 'catalogos'), {
+      marca: nombreMarca,
+      totalPaginas: totalPages,
+      paginas: paginasGuardadas,
+      createdAt: serverTimestamp()
+    });
+
+    statusMessage.innerText = '¡Catálogo cargado y procesado con éxito!';
+    alert('¡Catálogo procesado y guardado correctamente!');
+    formUploadCatalog.reset();
 
   } catch (error) {
-    console.error("Error al procesar el catálogo:", error);
-    alert("Ocurrió un error al procesar el catálogo: " + error.message);
+    console.error(error);
+    alert(`Ocurrió un error al procesar el catálogo: ${error.message}`);
   } finally {
     btnProcesar.disabled = false;
   }
-}
+});
