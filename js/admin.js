@@ -1,7 +1,6 @@
 import { db } from './firebase-config.js';
 import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
-// Configuración de PDF.js Worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 const formUploadCatalog = document.getElementById('formUploadCatalog');
@@ -48,36 +47,41 @@ formUploadCatalog.addEventListener('submit', async (e) => {
 
       await page.render({ canvasContext: context, viewport: viewport }).promise;
 
-      // Convertir página a imagen Blob (WebP)
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', 0.8));
+      // Obtener imagen en formato DataURL (Base64)
+      const dataUrl = canvas.toDataURL('image/webp', 0.8);
+      const base64Image = dataUrl.split(',')[1]; // Extraer solo la cadena Base64
 
-      // Subida de imagen a ImgBB
-      const formData = new FormData();
-      formData.append('image', blob);
-
-      // Reemplaza YOUR_IMGBB_API_KEY por tu API key de ImgBB
-      const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=YOUR_IMGBB_API_KEY`, {
+      // Enviar la imagen a nuestra Serverless Function
+      const response = await fetch('/api/upload', {
         method: 'POST',
-        body: formData
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ image: base64Image }),
       });
-      const imgbbData = await imgbbRes.json();
 
-      const imageUrl = imgbbData.data ? imgbbData.data.url : '';
+      const result = await response.json();
+
+      if (!result.success && !result.data) {
+        throw new Error(result.error || `Error al subir la página ${pageNum}`);
+      }
+
+      const imageUrl = result.data.url;
 
       paginasGuardadas.push({
         numeroPagina: pageNum,
-        imagenUrl: imageUrl
+        imagenUrl: imageUrl,
       });
     }
 
     statusMessage.innerText = 'Guardando datos del catálogo en Firestore...';
 
-    // Guardar catálogo en Firestore
+    // Guardar en Firestore
     await addDoc(collection(db, 'catalogos'), {
       marca: nombreMarca,
       totalPaginas: totalPages,
       paginas: paginasGuardadas,
-      createdAt: serverTimestamp()
+      createdAt: serverTimestamp(),
     });
 
     statusMessage.innerText = '¡Catálogo cargado y procesado con éxito!';
