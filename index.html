@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beauty Shop - Catálogos Virtuales</title>
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, sans-serif; }
+    body { background: #000000; color: #f8fafc; margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between; }
+    header { padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
+    .logo { font-size: 1.5rem; font-weight: 900; color: #ff007f; text-shadow: 0 0 10px rgba(255,0,127,0.6); }
+    .user-badge { background: #111; border: 1px solid #ff007f; color: #ff007f; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; }
+    .hero-container { display: grid; grid-template-columns: 1fr; gap: 30px; max-width: 1100px; margin: 40px auto; padding: 0 20px; align-items: start; width: 100%; }
+    @media (min-width: 768px) { .hero-container { grid-template-columns: 1fr 1fr; } }
+    .hero-text h1 { font-size: 2.8rem; margin: 0 0 15px 0; color: #ffffff; }
+    .hero-text h1 span { color: #ff007f; text-shadow: 0 0 15px rgba(255,0,127,0.5); }
+    .hero-text p { color: #aaa; font-size: 1rem; margin-bottom: 25px; }
+    .btn-unete { background: #ff007f; color: white; padding: 14px 28px; border-radius: 30px; font-weight: bold; font-size: 1rem; border: none; cursor: pointer; box-shadow: 0 0 20px rgba(255,0,127,0.6); transition: 0.2s; }
+    .btn-unete:hover { background: #e0006e; transform: scale(1.03); }
+    .cards-wrapper { display: flex; flex-direction: column; gap: 15px; }
+    .neon-card { background: #0a0a0a; border: 1px solid #222; border-left: 4px solid #ff007f; border-radius: 10px; padding: 20px; transition: 0.3s; cursor: pointer; }
+    .neon-card:hover { border-color: #ff007f; box-shadow: 0 0 15px rgba(255,0,127,0.25); }
+    .neon-card h3 { margin: 0 0 5px 0; color: #ff007f; font-size: 1.2rem; }
+    .neon-card p { margin: 0; color: #888; font-size: 0.85rem; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 100; }
+    .modal-content { background: #0a0a0a; border: 2px solid #ff007f; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; }
+    .modal-content h2 { color: #ff007f; margin-top: 0; }
+    .btn-google { width: 100%; background: #ffffff; color: #333; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+    .modal-content input { width: 100%; padding: 12px; background: #111; border: 1px solid #444; border-radius: 6px; color: white; margin: 8px 0; }
+    .btn-guardar { width: 100%; margin-top: 20px; background: #ff007f; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    footer { text-align: center; padding: 20px; color: #555; font-size: 0.8rem; border-top: 1px solid #111; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="logo">BEAUTY SHOP</div>
+  <div id="userSession" class="user-badge">Invitado</div>
+</header>
+<div class="hero-container">
+  <div class="hero-text">
+    <h1>Catálogos de <span>Élite</span> a un clic</h1>
+    <p>Explora catálogos, selecciona productos y confirma tu pedido.</p>
+    <button class="btn-unete" id="btnMainAuth">Ingresar / Registrarse</button>
+  </div>
+  <div class="cards-wrapper" id="catalogsList"><div style="color:#666;">Cargando catálogos...</div></div>
+</div>
+<div class="modal" id="modalAuth">
+  <div class="modal-content">
+    <h2>✨ Acceso</h2>
+    <button class="btn-google" id="btnGoogleAuth">🔑 Continuar con Google</button>
+    <div style="margin:15px 0;color:#555;">O</div>
+    <input type="text" id="nombreUsuario" placeholder="Tu nombre completo">
+    <input type="tel" id="celularUsuario" placeholder="Número de celular">
+    <button class="btn-guardar" id="btnCelularAuth">Entrar / Registrarme</button>
+  </div>
+</div>
+<footer>&copy; 2026 Beauty Shop - Todos los derechos reservados.</footer>
+<script type="module" src="./js/app.js"></script>
+</body>
+</html>
