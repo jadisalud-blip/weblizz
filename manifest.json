@@ -1,0 +1,21 @@
+{
+  "name": "Beauty Shop - Catálogos Virtuales",
+  "short_name": "BeautyShop",
+  "description": "Compra productos de catálogo de forma fácil y rápida",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#ff007f",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3081/3081559.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3081/3081559.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
